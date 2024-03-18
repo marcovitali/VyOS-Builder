@@ -1,14 +1,9 @@
 name: vyos-builder
 
 on:
-  workflow_dispatch:
   repository_dispatch:
     types:
       - webhook
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   setup:
@@ -24,12 +19,10 @@ jobs:
           date=$(date +%s)
           echo "build_number=$(TZ='UTC' date +'%Y%m%d%H%M' -d @${date})" >> $GITHUB_OUTPUT
           echo "timestamp=$(date +'%Y-%m-%dT%H:%M:%S%Z' -d @${date})" >> $GITHUB_OUTPUT
-          echo "matrix=$(cat matrix.json | jq -c)" >> $GITHUB_OUTPUT
 
     outputs:
       build_number: ${{ steps.generate_data.outputs.build_number }}
       timestamp: ${{ steps.generate_data.outputs.timestamp }}
-      matrix: ${{ steps.generate_data.outputs.matrix }}
 
   build:
     needs: setup
@@ -38,13 +31,9 @@ jobs:
     
     permissions:
       contents: write
-    
-    strategy:
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-      fail-fast: false
 
     container:
-      image: vyos/vyos-build:${{ matrix.version.branch }}
+      image: vyos/vyos-build:${{ github.event.client_payload.branch }}
       options: --privileged
     
     steps:
@@ -52,33 +41,33 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Pre-Build
-        run: git clone -b ${{ matrix.version.branch }} --single-branch https://github.com/vyos/vyos-build.git
+        run: git clone -b ${{ github.event.client_payload.branch }} --single-branch https://github.com/vyos/vyos-build.git
 
       - name: Build
         working-directory: vyos-build
         run: |
-          if [ -z "${{ matrix.version.custom_package }}" ]
+          if [ -z "${{ github.event.client_payload.custom_package }}" ]
           then
-            ./build-vyos-image iso --architecture "${{ matrix.version.architecture }}" --build-type "release" --version "${{ matrix.version.number }}-${{ needs.setup.outputs.build_number }}"
+            ./build-vyos-image iso --architecture "${{ github.event.client_payload.architecture }}" --build-type "release" --version "${{ github.event.client_payload.number }}-${{ needs.setup.outputs.build_number }}"
           else
-            ./build-vyos-image iso --architecture "${{ matrix.version.architecture }}" --build-type "release" --version "${{ matrix.version.number }}-${{ needs.setup.outputs.build_number }}" --custom-package "${{ matrix.version.custom_package }}"
+            ./build-vyos-image iso --architecture "${{ github.event.client_payload.architecture }}" --build-type "release" --version "${{ github.event.client_payload.number }}-${{ needs.setup.outputs.build_number }}" --custom-package "${{ github.event.client_payload.custom_package }}"
           fi
 
       - name: Post-Build
         id: post_build
         run: |
-          artifact_name=vyos-${{ matrix.version.number }}-${{ needs.setup.outputs.build_number }}-${{ matrix.version.branch }}-${{ matrix.version.architecture }}
+          artifact_name=vyos-${{ github.event.client_payload.number }}-${{ needs.setup.outputs.build_number }}-${{ github.event.client_payload.branch }}-${{ github.event.client_payload.architecture }}
           echo "artifact_name=${artifact_name}" >> $GITHUB_OUTPUT
-          mv vyos-build/build/live-image-${{ matrix.version.architecture }}.hybrid.iso ${artifact_name}.iso
+          mv vyos-build/build/live-image-${{ github.event.client_payload.architecture }}.hybrid.iso ${artifact_name}.iso
           echo "md5sum=$(md5sum ${artifact_name}.iso | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo "sha256sum=$(sha256sum ${artifact_name}.iso | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo "sha512sum=$(sha512sum ${artifact_name}.iso | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
-          jq -n --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/${{ matrix.version.branch }}/${artifact_name}.iso" --arg version "${{ matrix.version.number }}-${{ needs.setup.outputs.build_number }}" --arg timestamp "${{ needs.setup.outputs.timestamp }}" '[{url: $url, version: $version, timestamp: $timestamp}]' > version.json
+          jq -n --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/${{ github.event.client_payload.branch }}/${artifact_name}.iso" --arg version "${{ github.event.client_payload.number }}-${{ needs.setup.outputs.build_number }}" --arg timestamp "${{ needs.setup.outputs.timestamp }}" '[{url: $url, version: $version, timestamp: $timestamp}]' > version.json
 
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          name: VyOS ${{ matrix.version.number }} - ${{ matrix.version.branch }} - ${{ matrix.version.architecture }}
+          name: VyOS ${{ github.event.client_payload.number }} - ${{ github.event.client_payload.branch }} - ${{ github.event.client_payload.architecture }}
           artifacts: ${{ steps.post_build.outputs.artifact_name }}.iso,version.json
           allowUpdates: true
           removeArtifacts: true
@@ -88,5 +77,5 @@ jobs:
             | md5    | `${{ steps.post_build.outputs.md5sum }}` |
             | sha256 | `${{ steps.post_build.outputs.sha256sum }}` |
             | sha512 | `${{ steps.post_build.outputs.sha512sum }}` |
-          makeLatest: ${{ matrix.version.branch != 'current' }}
-          tag: ${{ matrix.version.branch }}
+          makeLatest: ${{ github.event.client_payload.branch != 'current' }}
+          tag: ${{ github.event.client_payload.branch }}
