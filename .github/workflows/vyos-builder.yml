@@ -86,5 +86,5 @@ jobs:
       - name: Notify
         uses: fjogeleit/http-request-action@v1
         with:
-          url: https://api.telegram.org/bot{{{${{ vars.TELEGRAM_BOT_TOKEN }}}}}/sendMessage?text={{{${{ github.event.client_payload.notifyText }}}}}&chat_id={{{${{ vars.TELEGRAM_CHAT_ID }}}}}&parse_mode=Markdown
+          url: 'https://api.telegram.org/bot${{ vars.TELEGRAM_BOT_TOKEN }}/sendMessage?text=${{ github.event.client_payload.notifyText }}&chat_id=${{ vars.TELEGRAM_CHAT_ID }}&parse_mode=Markdown'
           method: POST
