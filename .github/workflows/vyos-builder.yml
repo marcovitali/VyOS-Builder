@@ -84,7 +84,21 @@ jobs:
           tag: ${{ github.event.client_payload.branch }}
 
       - name: Notify
+        if: ${{ false }}
         uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://api.telegram.org/bot${{ vars.TELEGRAM_BOT_TOKEN }}/sendMessage?text=${{ github.event.client_payload.notifyText }}&chat_id=${{ vars.TELEGRAM_CHAT_ID }}&parse_mode=Markdown'
+          url: https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage?text=${{ github.event.client_payload.notifyText }}&chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&parse_mode=Markdown
           method: POST
+
+      - name: Telegram Notify
+        uses: cbrgm/telegram-github-action@v1
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          message: |
+            🚀 New Release Published!
+            Release Name: ${{ github.event.release.name }}
+            Tag: ${{ github.event.release.tag_name }}
+            Actor: ${{ github.actor }}
+            Repository: ${{ github.repository }}
+            Check it out: ${{ github.event.release.html_url }}j
