@@ -84,15 +84,9 @@ jobs:
           tag: ${{ github.event.client_payload.branch }}
 
       - name: Notify
-        if: ${{ false }}
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage?text=${{ github.event.client_payload.notifyText }}&chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&parse_mode=Markdown
-          method: POST
-
-      - name: send telegram message on push
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
           message: ${{ github.event.client_payload.notifyText }}
