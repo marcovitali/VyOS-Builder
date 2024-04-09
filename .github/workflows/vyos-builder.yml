@@ -90,9 +90,9 @@ jobs:
           url: https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage?text=${{ github.event.client_payload.notifyText }}&chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&parse_mode=Markdown
           method: POST
 
-      - name: Telegram Notify
-        uses: cbrgm/telegram-github-action@v1
+      - name: send telegram message on push
+        uses: appleboy/telegram-action@master
         with:
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           message: ${{ github.event.client_payload.notifyText }}
