@@ -87,3 +87,12 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: ${{ github.event.client_payload.notifyText }}
+
+      - name: Update Latest Version
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: https://node-red.sargas.freemyip.com/vyos-updates-detector/latest-version
+          method: POST
+          username: ${{ secrets.NODERED_USERNAME }}
+          password: ${{ secrets.NODERED_PASSWORD }}
+          data: '{"version": "${{ github.event.client_payload.branch }}", "latestVersion": "${{ github.event.client_payload.latestVersion }}"}'
