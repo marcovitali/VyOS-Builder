@@ -44,6 +44,7 @@ jobs:
         run: git clone -b ${{ github.event.client_payload.branch }} --single-branch https://github.com/vyos/vyos-build.git
 
       - name: Build
+        if: ${{ false }}
         working-directory: vyos-build
         run: |
           if [ -z "${{ github.event.client_payload.custom_package }}" ]
@@ -54,6 +55,7 @@ jobs:
           fi
 
       - name: Post-Build
+        if: ${{ false }}
         id: post_build
         run: |
           artifact_name=vyos-${{ github.event.client_payload.number }}-${{ needs.setup.outputs.build_number }}-${{ github.event.client_payload.branch }}-${{ github.event.client_payload.architecture }}
@@ -65,6 +67,7 @@ jobs:
           jq -n --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/${{ github.event.client_payload.branch }}/${artifact_name}.iso" --arg version "${{ github.event.client_payload.number }}-${{ needs.setup.outputs.build_number }}" --arg timestamp "${{ needs.setup.outputs.timestamp }}" '[{url: $url, version: $version, timestamp: $timestamp}]' > version.json
 
       - name: Release
+        if: ${{ false }}
         uses: ncipollo/release-action@v1
         with:
           name: VyOS ${{ github.event.client_payload.number }} - ${{ github.event.client_payload.branch }} - ${{ github.event.client_payload.architecture }}
@@ -79,3 +82,9 @@ jobs:
             | sha512 | `${{ steps.post_build.outputs.sha512sum }}` |
           makeLatest: ${{ github.event.client_payload.branch != 'current' }}
           tag: ${{ github.event.client_payload.branch }}
+
+      - name: Notify
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: https://api.telegram.org/bot{{{${{ vars.TELEGRAM_BOT_TOKEN }}}}}/sendMessage?text={{{${{ github.event.client_payload.notifyText }}}}}&chat_id={{{${{ vars.TELEGRAM_CHAT_ID }}}}}&parse_mode=Markdown
+          method: POST
