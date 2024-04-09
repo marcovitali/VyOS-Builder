@@ -93,6 +93,6 @@ jobs:
         with:
           url: https://node-red.sargas.freemyip.com/vyos-updates-detector/latest-version
           method: POST
-          username: ${{ secrets.NODERED_USERNAME }}
-          password: ${{ secrets.NODERED_PASSWORD }}
+          username: ${{ secrets.NODERED_ENDPOINT_USERNAME }}
+          password: ${{ secrets.NODERED_ENDPOINT_PASSWORD }}
           data: '{"version": "${{ github.event.client_payload.branch }}", "latestVersion": "${{ github.event.client_payload.latestVersion }}"}'
